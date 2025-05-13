@@ -9,6 +9,12 @@
 #pragma comment(lib,"d3d12.lib")
 #pragma comment(lib,"dxgi.lib")
 
+/*/////////01-00//////////
+typedef struct D3D12_CPU_DESCRIPTOR_HANDLE
+{
+	SIZE_T ptr;
+}D3D12_CPU_DESCRIPTOR_HANDLE;*/
+
 //ウィンドウプロシージャ
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 {
