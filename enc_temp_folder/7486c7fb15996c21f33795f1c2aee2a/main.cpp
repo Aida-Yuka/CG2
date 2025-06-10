@@ -584,7 +584,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 			commandList->DrawInstanced(3, 1, 0, 0);//描画
 
 			//画面に各処理は全て終わり、画面に映すので状態を遷移
-			//RenderTargetからPresentにする
+	//RenderTargetからPresentにする
 			barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
 			barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
 			//TransiionBarrierを張る
