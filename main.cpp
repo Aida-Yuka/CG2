@@ -676,9 +676,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 			commandList->SetPipelineState(graphicsPipelineState);//PSOを設定
 			commandList->IASetVertexBuffers(0, 1, &vertexBufferView);//VBVを設定
 			commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);//形状を設定
-			/*/マテリアルCBufferの場所を設定
+			//マテリアルCBufferの場所を設定
 			commandList->SetGraphicsRootConstantBufferView(0, materialResource->GetGPUVirtualAddress());
-			commandList->DrawInstanced(3, 1, 0, 0);//描画*/
+			commandList->DrawInstanced(3, 1, 0, 0);//描画
 
 			//画面に各処理は全て終わり、画面に映すので状態を遷移
 			//RenderTargetからPresentにする
