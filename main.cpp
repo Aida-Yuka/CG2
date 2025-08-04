@@ -788,7 +788,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	viewport.TopLeftX = 0;
 	viewport.TopLeftY = 0;
 	viewport.MinDepth = 0.0f;
-	viewport.MaxDepth = 0.0f;
+	viewport.MaxDepth = 1.0f;
 	//シザ―矩形
 	D3D12_RECT scissorRect{};
 	//基本的にビューポートと同じ矩形が構成されるようにする
