@@ -1043,7 +1043,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	//DSV用のヒープでディスクリプタの数は1
 	ID3D12DescriptorHeap* dsvDescriptorHeap = CreateDescriptorHeap(device, D3D12_DESCRIPTOR_HEAP_TYPE_DSV, 1, false);
 
-
 	//DSVの設定
 	D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc{};
 	dsvDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
