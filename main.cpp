@@ -10,6 +10,7 @@
 #include <vector>
 #include <fstream>
 #include <sstream>
+#include <numbers>
 
 #include "externals/imgui/imgui.h"
 #include "externals/imgui/imgui_impl_dx12.h"
@@ -1027,6 +1028,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	D3D12_BLEND_DESC blendDesc{};
 	//全ての色要素を書き込む
 	blendDesc.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
+	blendDesc.RenderTarget[0].BlendEnable = TRUE;
+	blendDesc.RenderTarget[0].SrcBlend = D3D12_BLEND_SRC_ALPHA;
+	blendDesc.RenderTarget[0].BlendOp = D3D12_BLEND_OP_ADD;
+	blendDesc.RenderTarget[0].DestBlend = D3D12_BLEND_INV_SRC_ALPHA;
+	blendDesc.RenderTarget[0].SrcBlendAlpha = D3D12_BLEND_ONE;
+	blendDesc.RenderTarget[0].BlendOpAlpha = D3D12_BLEND_OP_ADD;
+	blendDesc.RenderTarget[0].DestBlendAlpha = D3D12_BLEND_ZERO;
 
 	//RasiterzerStateの設定
 	D3D12_RASTERIZER_DESC rasterizerDesc{};
@@ -1113,24 +1121,100 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	//vertexData[5].position = { 0.5f,-0.5f,-0.5f,1.0f };
 	//vertexData[5].texcoord = { 1.0f,1.0f };
 
-	//頂点バッファビューを作成する
-	D3D12_VERTEX_BUFFER_VIEW vertexBufferView{};
+	////頂点バッファビューを作成する
+	//D3D12_VERTEX_BUFFER_VIEW vertexBufferView{};
 
-	//モデル読み込み
-	ModelData modelData = LoadObjFile("resources", "plane.obj");
-	//ModelData modelData = LoadObjFile("resources", "axis.obj");
+	////モデル読み込み
+	//ModelData modelData = LoadObjFile("resources", "plane.obj");
+	////ModelData modelData = LoadObjFile("resources", "axis.obj");
+	////頂点リソースを作る
+	//ID3D12Resource* vertexResource = CreateBufferResource(device, sizeof(VertexData) * modelData.vertices.size());
+	////頂点バッファビューを作成する
+	//D3D12_VERTEX_BUFFER_VIEW vertexBufferResource{};
+	//vertexBufferView.BufferLocation = vertexResource->GetGPUVirtualAddress();
+	//vertexBufferView.SizeInBytes = UINT(sizeof(VertexData) * modelData.vertices.size());
+	//vertexBufferView.StrideInBytes = sizeof(VertexData);
+
+	////頂点リソースにデータを書き込む
+	//VertexData* vertexData = nullptr;
+	//vertexResource->Map(0, nullptr, reinterpret_cast<void**>(&vertexData));
+	//std::memcpy(vertexData, modelData.vertices.data(), sizeof(VertexData)* modelData.vertices.size());
+
+	//=====球表示用=====
+	const uint32_t kSubdivision = 12;
+	const uint32_t kNumSphereVertices = kSubdivision * kSubdivision * 6;
+	float pi = std::numbers::pi_v<float>;
+
 	//頂点リソースを作る
-	ID3D12Resource* vertexResource = CreateBufferResource(device, sizeof(VertexData) * modelData.vertices.size());
-	//頂点バッファビューを作成する
-	D3D12_VERTEX_BUFFER_VIEW vertexBufferResource{};
-	vertexBufferView.BufferLocation = vertexResource->GetGPUVirtualAddress();
-	vertexBufferView.SizeInBytes = UINT(sizeof(VertexData) * modelData.vertices.size());
-	vertexBufferView.StrideInBytes = sizeof(VertexData);
+	ID3D12Resource* vertexResource = CreateBufferResource(device, sizeof(VertexData) * kNumSphereVertices);
 
+	ModelData modelData = LoadObjFile("resources", "plane.obj");
 	//頂点リソースにデータを書き込む
 	VertexData* vertexData = nullptr;
+	//書き込むためのアドレスを取得
 	vertexResource->Map(0, nullptr, reinterpret_cast<void**>(&vertexData));
-	std::memcpy(vertexData, modelData.vertices.data(), sizeof(VertexData)* modelData.vertices.size());
+
+	//頂点バッファビューを作成する
+	D3D12_VERTEX_BUFFER_VIEW vertexBufferView{};
+	//リソースの先頭のアドレスから使う
+	vertexBufferView.BufferLocation = vertexResource->GetGPUVirtualAddress();
+	//使用するリソースのサイズは頂点4つ分のサイズ
+	vertexBufferView.SizeInBytes = sizeof(VertexData) * kNumSphereVertices;
+	//1頂点あたりのサイズ
+	vertexBufferView.StrideInBytes = sizeof(VertexData);
+
+	//経度分割1つ分の角度
+	const float kLonEvery = pi * 2.0f / float(kSubdivision);
+	//経度分割１つ分の角度
+	const float kLatEvery = pi / float(kSubdivision);
+
+	//経度の方向に分割
+	for (uint32_t latIndex = 0; latIndex < kSubdivision; ++latIndex)
+	{
+		float lat = -pi / 2.0f + kLatEvery * latIndex;
+		//経度の方向に分割しながら線を描く
+		for (uint32_t lonIndex = 0; lonIndex < kSubdivision; ++lonIndex)
+		{
+			uint32_t startIndex = (latIndex * kSubdivision + lonIndex) * 6;
+			float lon = lonIndex * kLonEvery;
+
+			vertexData[startIndex].position.x = std::cos(lat) * std::cos(lon);
+			vertexData[startIndex].position.y = std::sin(lat);
+			vertexData[startIndex].position.z = std::cos(lat) * std::sin(lon);
+			vertexData[startIndex].position.w = 1.0f;
+			vertexData[startIndex].texcoord = { float(lonIndex) / float(kSubdivision),1.0f - float(latIndex) / float(kSubdivision) };
+
+			vertexData[startIndex + 1].position.x = std::cos(lat + kLatEvery) * std::cos(lon);;
+			vertexData[startIndex + 1].position.y = std::sin(lat + kLatEvery);
+			vertexData[startIndex + 1].position.z = std::cos(lat + kLatEvery) * std::sin(lon);
+			vertexData[startIndex + 1].position.w = 1.0f;
+			vertexData[startIndex + 1].texcoord = { float(lonIndex) / float(kSubdivision),1.0f - float(latIndex + 1) / float(kSubdivision) };
+
+			vertexData[startIndex + 2].position.x = std::cos(lat) * std::cos(lon + kLonEvery);
+			vertexData[startIndex + 2].position.y = std::sin(lat);
+			vertexData[startIndex + 2].position.z = std::cos(lat) * std::sin(lon + kLonEvery);
+			vertexData[startIndex + 2].position.w = 1.0;
+			vertexData[startIndex + 2].texcoord = { float(lonIndex + 1) / float(kSubdivision),1.0f - float(latIndex) / float(kSubdivision) };
+
+			vertexData[startIndex + 3] = vertexData[startIndex + 2];
+			vertexData[startIndex + 4] = vertexData[startIndex + 1];
+
+			vertexData[startIndex + 5].position.x = std::cos(lat + kLatEvery) * std::cos(lon + kLonEvery);
+			vertexData[startIndex + 5].position.y = std::sin(lat + kLatEvery);
+			vertexData[startIndex + 5].position.z = std::cos(lat + kLatEvery) * std::sin(lon + kLonEvery);
+			vertexData[startIndex + 5].position.w = 1.0;
+			vertexData[startIndex + 5].texcoord = { float(lonIndex + 1) / float(kSubdivision),1.0f - float(latIndex) / float(kSubdivision + 1) };
+		}
+	}
+
+	//Sprite用のTransformatirxリソースを作る
+	ID3D12Resource* transformationMatrixResourceSprite = CreateBufferResource(device, sizeof(Matrix4x4));
+	//データを書き込む
+	Matrix4x4* transformationMatrixDataSprite = nullptr;
+	//書き込むためのアドレスを取得
+	transformationMatrixResourceSprite->Map(0, nullptr, reinterpret_cast<void**>(&transformationMatrixDataSprite));
+	//単位行列を書き込んでおく
+	*transformationMatrixDataSprite = MakeIdentity4x4();
 
 	//Transform関数を作る
 	Transform transform{ {1.0f,1.0f,1.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f,0.0f} };
@@ -1179,15 +1263,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	//右上
 	vertexDataSprite[3].position = { 640.0f,0.0f,0.0f,1.0f };
 	vertexDataSprite[3].texcoord = { 1.0f,0.0f };
-
-	//Sprite用のTransformatirxリソースを作る
-	ID3D12Resource* transformationMatrixResourceSprite = CreateBufferResource(device, sizeof(Matrix4x4));
-	//データを書き込む
-	Matrix4x4* transformationMatrixDataSprite = nullptr;
-	//書き込むためのアドレスを取得
-	transformationMatrixResourceSprite->Map(0, nullptr, reinterpret_cast<void**>(&transformationMatrixDataSprite));
-	//単位行列を書き込んでおく
-	*transformationMatrixDataSprite = MakeIdentity4x4();
 
 	Transform transformSprite{ {1.0f,1.0f,1.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f,0.0f} };
 
@@ -1391,9 +1466,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 			//SRVのDescriptorTableの先頭を設定。2はrootParameter[2]である
 			commandList->SetGraphicsRootDescriptorTable(2, textureSrvHandleGPU);
 
-			//commandList->DrawInstanced(6, 1, 0, 0);//描画
+			commandList->DrawInstanced(6, 1, 0, 0);//描画
+			commandList->DrawInstanced(kNumSphereVertices, 1, 0, 0);//球の描画
 			//ModelDataの描画
-			commandList->DrawInstanced(UINT(modelData.vertices.size()), 1, 0, 0);
+			//commandList->DrawInstanced(UINT(modelData.vertices.size()), 1, 0, 0);
 
 			/*Matrix4x4 worldMatrix = MakeAffineMatrix(transform.scale, transform.rotate, transform.translate);
 			*wvpData = worldMatrix;*/
@@ -1404,12 +1480,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 			//TransformMatrixCBufferの場所を設定
 			commandList->SetGraphicsRootConstantBufferView(1, transformationMatrixResourceSprite->GetGPUVirtualAddress());
 			//描画
-			//commandList->DrawInstanced(6, 1, 0, 0);
+			commandList->DrawInstanced(6, 1, 0, 0);
 
 			//描画
-			commandList->DrawIndexedInstanced(6, 1, 0, 0, 0);
-
-			
+			//commandList->DrawIndexedInstanced(6, 1, 0, 0, 0);
 
 			//実際のcommandListの描画コマンドを積む
 			ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), commandList);
@@ -1453,6 +1527,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 			assert(SUCCEEDED(hr));
 		}
 	}
+
+	D3D12_CPU_DESCRIPTOR_HANDLE GetCPUDescriptorHandle(ID3D12Descrip)
 
 	//ImGuiの終了処理
 	ImGui_ImplDX12_Shutdown();
