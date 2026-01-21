@@ -1528,7 +1528,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		}
 	}
 
-	D3D12_CPU_DESCRIPTOR_HANDLE GetCPUDescriptorHandle(ID3D12Descrip)
+	//D3D12_CPU_DESCRIPTOR_HANDLE GetCPUDescriptorHandle(ID3D12Descrip)
 
 	//ImGuiの終了処理
 	ImGui_ImplDX12_Shutdown();
