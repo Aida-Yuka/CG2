@@ -1203,7 +1203,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 			vertexData[startIndex + 5].position.y = std::sin(lat + kLatEvery);
 			vertexData[startIndex + 5].position.z = std::cos(lat + kLatEvery) * std::sin(lon + kLonEvery);
 			vertexData[startIndex + 5].position.w = 1.0;
-			vertexData[startIndex + 5].texcoord = { float(lonIndex + 1) / float(kSubdivision),1.0f - float(latIndex) / float(kSubdivision + 1) };
+			vertexData[startIndex + 5].texcoord = { float(lonIndex + 1) / float(kSubdivision),1.0f - float(latIndex + 1) / float(kSubdivision) };
 		}
 	}
 
@@ -1480,7 +1480,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 			//TransformMatrixCBufferの場所を設定
 			commandList->SetGraphicsRootConstantBufferView(1, transformationMatrixResourceSprite->GetGPUVirtualAddress());
 			//描画
-			commandList->DrawInstanced(6, 1, 0, 0);
+			commandList->DrawIndexedInstanced(6, 1, 0, 0, 0);
 
 			//描画
 			//commandList->DrawIndexedInstanced(6, 1, 0, 0, 0);
@@ -1527,8 +1527,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 			assert(SUCCEEDED(hr));
 		}
 	}
-
-	//D3D12_CPU_DESCRIPTOR_HANDLE GetCPUDescriptorHandle(ID3D12Descrip)
 
 	//ImGuiの終了処理
 	ImGui_ImplDX12_Shutdown();
